@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CvGo — Otimizador ATS com IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0B1120;--navy2:#131929;--accent:#4F7FFF;--accent2:#7B9FFF;--accent-dim:rgba(79,127,255,0.12);--accent-glow:rgba(79,127,255,0.3);--green:#22C98B;--green-dim:rgba(34,201,139,0.12);--red:#FF5F6D;--red-dim:rgba(255,95,109,0.12);--amber:#FFB547;--amber-dim:rgba(255,181,71,0.12);--purple:#C084FC;--text:#E8EDF8;--text2:#8A95B0;--text3:#5A6480;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.08)}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);min-height:100vh;overflow-x:hidden}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;opacity:.3}
+.orb-1{width:600px;height:600px;background:#1A3A8F;top:-200px;left:-150px}
+.orb-2{width:450px;height:450px;background:#0D3D2E;bottom:-120px;right:-100px}
+nav{position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 2rem;border-bottom:1px solid var(--border);backdrop-filter:blur(16px);background:rgba(11,17,32,0.8)}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);text-decoration:none}
+.logo-icon{width:35px;height:35px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.logo span{color:var(--accent2)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-badge{font-size:11px;font-weight:500;background:var(--accent-dim);color:var(--accent2);border:1px solid rgba(79,127,255,0.25);padding:3px 10px;border-radius:99px;font-family:'Syne',sans-serif}
+.btn-icon{width:34px;height:34px;border-radius:8px;border:1px solid var(--border2);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;color:var(--text2)}
+.btn-icon:hover{background:var(--card2);color:var(--text)}
+.hero{position:relative;z-index:5;text-align:center;padding:3.5rem 2rem 2.5rem}
+.eyebrow{color:var(--accent2);background:var(--accent-dim);padding:5px 14px;border-radius:99px;display:inline-block;font-size:11px;margin-bottom:1.25rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(79,127,255,.2)}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4.5vw,3.2rem);font-weight:800;line-height:1.1;letter-spacing:-.02em;margin-bottom:.9rem}
+.hl{background:linear-gradient(135deg,#4F7FFF,#22C98B);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:15px;color:var(--text2);max-width:540px;margin:0 auto 2rem;line-height:1.7;font-weight:300}
+.steps-bar{position:relative;z-index:5;display:flex;align-items:center;justify-content:center;max-width:700px;margin:0 auto 2.5rem;padding:0 1.5rem}
+.step-item{display:flex;align-items:center;gap:8px;flex:1}
+.step-item:not(:last-child)::after{content:'';flex:1;height:1px;background:var(--border2);margin:0 6px}
+.step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Syne',sans-serif;border:1px solid var(--border2);color:var(--text3);background:var(--navy2);transition:all .3s;flex-shrink:0}
+.step-label{font-size:11px;color:var(--text3);font-weight:500;white-space:nowrap}
+.step-item.active .step-num{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 14px var(--accent-glow)}
+.step-item.active .step-label{color:var(--text)}
+.step-item.done .step-num{background:var(--green);border-color:var(--green);color:#fff}
+.step-item.done .step-label{color:var(--text2)}
+.main{position:relative;z-index:5;max-width:1100px;margin:0 auto;padding:0 1.5rem 5rem}
+.panel{display:none;animation:fadeUp .3s ease}
+.panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+@media(max-width:700px){.input-grid{grid-template-columns:1fr}}
+.field-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.25rem;transition:.2s}
+.field-card:focus-within{border-color:rgba(79,127,255,.4)}
+.upload-btn{border:1.5px dashed var(--border2);border-radius:12px;padding:13px 15px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;background:rgba(79,127,255,.03);width:100%;margin-bottom:12px}
+.upload-btn:hover{border-color:var(--accent);background:var(--accent-dim)}
+.upload-icon{width:32px;height:32px;background:var(--accent-dim);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.upload-status{font-size:12px;padding:6px 12px;border-radius:8px;margin-bottom:8px;display:none}
+.upload-status.loading{background:var(--accent-dim);color:var(--accent2);display:block}
+.upload-status.success{background:var(--green-dim);color:var(--green);display:block}
+.upload-status.error{background:var(--red-dim);color:#FFB0B5;display:block}
+.field-label{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px}
+textarea{width:100%;background:transparent;border:none;outline:none;resize:none;font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.65;color:var(--text2)}
+textarea::placeholder{color:var(--text3)}
+.char-count{font-size:11px;color:var(--text3);text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.action-row{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:.5rem}
+.hint{font-size:12px;color:var(--text3)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:.7rem 1.75rem;border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;letter-spacing:.02em}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 20px rgba(79,127,255,.3)}
+.btn-primary:hover:not(:disabled){background:#3d6dee;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-secondary{background:var(--card2);color:var(--text2);border:1px solid var(--border2)}
+.btn-secondary:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.btn-green{background:var(--green);color:#0B1120;box-shadow:0 4px 18px rgba(34,201,139,.25)}
+.btn-green:hover{transform:translateY(-1px)}
+.btn-purple{background:var(--purple);color:#0B1120}
+.btn-purple:hover{transform:translateY(-1px)}
+.loading-wrap{display:flex;flex-direction:column;align-items:center;padding:5rem 2rem;gap:1.5rem}
+.loader{width:52px;height:52px;border:3px solid var(--accent-dim);border-radius:50%;border-top-color:var(--accent);animation:spin 1s linear infinite}
+.loading-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:700}
+.loading-desc{font-size:14px;color:var(--text2);max-width:380px;text-align:center}
+.analysis-layout{display:grid;grid-template-columns:280px 1fr;gap:1.5rem}
+@media(max-width:800px){.analysis-layout{grid-template-columns:1fr}}
+.score-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 1.5rem;text-align:center}
+.score-circle{width:150px;height:150px;margin:0 auto 1.5rem;position:relative;display:flex;align-items:center;justify-content:center}
+.score-circle svg{transform:rotate(-90deg);width:100%;height:100%}
+.score-circle circle{fill:none;stroke-width:8;stroke-linecap:round}
+.score-circle .bg{stroke:var(--border2)}
+.score-circle .val{transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)}
+.score-text{position:absolute;font-family:'Syne',sans-serif;font-size:36px;font-weight:800}
+.verdict-text{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:.5rem}
+.verdict-desc{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:1.5rem}
+.metrics-list{display:flex;flex-direction:column;gap:8px;text-align:left}
+.metric-row{background:var(--navy2);padding:10px 14px;border-radius:10px;border:1px solid var(--border)}
+.metric-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.metric-val{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.metric-bar-track{height:3px;background:var(--border2);border-radius:99px;margin-top:6px;overflow:hidden}
+.metric-bar-fill{height:100%;border-radius:99px;transition:width 1.2s ease}
+.main-col{display:flex;flex-direction:column;gap:1.25rem}
+.section-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem}
+.section-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.tag-list{display:flex;flex-wrap:wrap;gap:8px}
+.tag{font-size:12px;padding:4px 12px;border-radius:6px}
+.tag-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,201,139,.2)}
+.tag-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,95,109,.2)}
+.tag-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,181,71,.2)}
+.tip-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.tip-list li{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;padding:10px 12px;background:var(--accent-dim);border-radius:10px;color:var(--accent2)}
+.tip-list li::before{content:'→';flex-shrink:0;font-weight:700}
+.weakness-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.weakness-list li{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;padding:10px 12px;background:var(--red-dim);border-radius:10px;color:#FFB0B5}
+.weakness-list li::before{content:'!';flex-shrink:0;font-weight:700}
+.resume-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px}
+.resume-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700}
+.resume-sub{font-size:13px;color:var(--text2);margin-top:2px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.resume-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;font-size:13.5px;line-height:1.85;white-space:pre-wrap;font-family:'DM Sans',sans-serif;color:var(--text2);max-height:600px;overflow-y:auto}
+.resume-box::-webkit-scrollbar{width:5px}
+.resume-box::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+.ats-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem}
+.ats-badge{font-size:11px;font-weight:500;padding:4px 12px;border-radius:99px;background:var(--green-dim);color:var(--green);border:1px solid rgba(34,201,139,.2)}
+.letter-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;font-size:14px;line-height:1.9;white-space:pre-wrap;font-family:'DM Sans',sans-serif;color:var(--text2);max-height:600px;overflow-y:auto}
+.history-grid{display:flex;flex-direction:column;gap:10px}
+.history-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;display:flex;align-items:center;gap:14px;cursor:pointer;transition:.2s;position:relative}
+.history-card:hover{border-color:var(--accent);background:var(--card2)}
+.history-score{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;flex-shrink:0}
+.history-info{flex:1;min-width:0}
+.history-job{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.history-del{position:absolute;right:10px;top:10px;opacity:0;transition:.2s;background:var(--red-dim);color:var(--red);border:none;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:10px}
+.history-card:hover .history-del{opacity:1}
+.error-box{background:var(--red-dim);border:1px solid rgba(255,95,109,.3);border-radius:12px;padding:1rem 1.25rem;font-size:13px;color:#FFB0B5}
+footer{position:relative;z-index:5;text-align:center;padding:2rem;font-size:12px;color:var(--text3);border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<nav>
+  <a class="logo" href="#"><div class="logo-icon">&#127919;</div>Cv<span>Go</span></a>
+  <div class="nav-right">
+    <button class="btn-icon" onclick="showPanel('history')" title="Historico">&#128337;</button>
+    <div class="nav-badge">&#10022; Groq AI &middot; Llama 3.3</div>
+  </div>
+</nav>
+<div class="main">
+
+<!-- INPUT -->
+<div class="panel active" id="panel-input">
+  <div class="hero">
+    <div class="eyebrow">Otimizador de Curriculo ATS</div>
+    <h1>CvGo &mdash; seu curriculo <span class="hl">otimizado</span><br/>para cada vaga</h1>
+    <p>Cole ou anexe seu curriculo e a descricao da vaga. A IA analisa a compatibilidade e reescreve seu CV no padrao ATS.</p>
+  </div>
+  <div class="steps-bar">
+    <div class="step-item active" id="step-1"><div class="step-num">1</div><span class="step-label">Dados</span></div>
+    <div class="step-item" id="step-2"><div class="step-num">2</div><span class="step-label">Analise</span></div>
+    <div class="step-item" id="step-3"><div class="step-num">3</div><span class="step-label">Curriculo ATS</span></div>
+    <div class="step-item" id="step-4"><div class="step-num">4</div><span class="step-label">Carta</span></div>
+  </div>
+  <div class="input-grid">
+    <div class="field-card">
+      <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" style="display:none" onchange="handleFile(this)"/>
+      <div class="upload-btn" onclick="document.getElementById('resumeFile').click()">
+        <div class="upload-icon">&#128196;</div>
+        <div><div style="font-size:13px;font-weight:600">Anexar curriculo</div><div style="font-size:11px;color:var(--text3)">PDF, DOC ou DOCX</div></div>
+      </div>
+      <div class="upload-status" id="uploadStatus"></div>
+      <div class="field-label">Ou cole o texto do curriculo</div>
+      <textarea id="resumeText" rows="13" placeholder="Nome, experiencias, formacao e habilidades..."></textarea>
+      <div class="char-count" id="resumeChars">0 caracteres</div>
+    </div>
+    <div class="field-card">
+      <div class="field-label">Descricao da Vaga</div>
+      <textarea id="jobText" rows="18" placeholder="Requisitos, responsabilidades e competencias..."></textarea>
+      <div class="char-count" id="jobChars">0 caracteres</div>
+    </div>
+  </div>
+  <div class="action-row">
+    <div class="hint" id="hintText">Preencha os dois campos para continuar</div>
+    <button class="btn btn-primary" id="analyzeBtn" onclick="runAnalysis()" disabled>Analisar Compatibilidade</button>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="panel" id="panel-loading">
+  <div class="loading-wrap">
+    <div class="loader"></div>
+    <div class="loading-title" id="loadingTitle">Analisando com IA...</div>
+    <div class="loading-desc" id="loadingDesc">Cruzando suas competencias com os requisitos da vaga...</div>
+  </div>
+</div>
+
+<!-- ANALYSIS -->
+<div class="panel" id="panel-analysis">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem">
+    <button class="btn btn-secondary" onclick="showPanel('input')">&larr; Voltar</button>
+    <button class="btn btn-green" onclick="runRewrite()">Gerar Curriculo ATS</button>
+    <button class="btn btn-purple" onclick="runCoverLetter()">Gerar Carta</button>
+  </div>
+  <div class="analysis-layout">
+    <div>
+      <div class="score-card">
+        <div class="score-circle">
+          <svg viewBox="0 0 150 150"><circle class="bg" cx="75" cy="75" r="62"/><circle class="val" id="scoreCircle" cx="75" cy="75" r="62" stroke-dasharray="390" stroke-dashoffset="390"/></svg>
+          <div class="score-text" id="scoreText">0%</div>
+        </div>
+        <div class="verdict-text" id="verdictText"></div>
+        <div class="verdict-desc" id="verdictDesc"></div>
+        <div class="metrics-list" id="metricsList"></div>
+      </div>
+    </div>
+    <div class="main-col">
+      <div class="section-card">
+        <div class="section-title">Resumo do Match</div>
+        <p id="resSummary" style="line-height:1.7;color:var(--text2);font-size:14px"></p>
+      </div>
+      <div class="section-card">
+        <div class="section-title">Palavras-chave Encontradas</div>
+        <div class="tag-list" id="resFound"></div>
+      </div>
+      <div class="section-card">
+        <div class="section-title">Palavras-chave Ausentes</div>
+        <div class="tag-list" id="resMissing"></div>
+      </div>
+      <div class="section-card">
+        <div class="section-title">Pontos Fortes</div>
+        <div class="tag-list" id="resStrengths"></div>
+      </div>
+      <div class="section-card">
+        <div class="section-title">Pontos de Melhoria</div>
+        <ul class="weakness-list" id="resWeaknesses"></ul>
+      </div>
+      <div class="section-card" style="border-color:rgba(79,127,255,.3)">
+        <div class="section-title" style="color:var(--accent2)">Dicas Estrategicas</div>
+        <ul class="tip-list" id="resTips"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESUME -->
+<div class="panel" id="panel-resume">
+  <div id="resumeLoadingWrap" style="display:none" class="loading-wrap">
+    <div class="loader"></div>
+    <div class="loading-title">Otimizando curriculo...</div>
+    <div class="loading-desc">Inserindo palavras-chave e corrigindo pontos de melhoria...</div>
+  </div>
+  <div id="resumeContent" style="display:none">
+    <div class="resume-header">
+      <div><div class="resume-title">Curriculo ATS Otimizado</div><div class="resume-sub">Palavras-chave inseridas e pronto para envio</div></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="copyEl('resumeOutput',this)">Copiar</button>
+        <button class="btn btn-secondary" onclick="downloadEl('resumeOutput')">Baixar .txt</button>
+        <button class="btn btn-secondary" onclick="printEl('resumeOutput')">PDF</button>
+        <button class="btn btn-green" onclick="runRewrite()">Regenerar</button>
+      </div>
+    </div>
+    <div class="ats-badges">
+      <span class="ats-badge">Formato ATS</span>
+      <span class="ats-badge">Palavras-chave inseridas</span>
+      <span class="ats-badge">Melhorias aplicadas</span>
+      <span id="scoreBadge" class="ats-badge" style="background:var(--accent-dim);color:var(--accent2);border-color:rgba(79,127,255,.3)"></span>
+    </div>
+    <div class="resume-box" id="resumeOutput"></div>
+    <div style="display:flex;gap:10px;margin-top:1rem">
+      <button class="btn btn-secondary" onclick="showPanel('analysis')">&larr; Ver Analise</button>
+      <button class="btn btn-purple" onclick="runCoverLetter()">Gerar Carta</button>
+    </div>
+  </div>
+</div>
+
+<!-- LETTER -->
+<div class="panel" id="panel-letter">
+  <div id="letterLoadingWrap" style="display:none" class="loading-wrap">
+    <div class="loader"></div>
+    <div class="loading-title">Escrevendo carta...</div>
+    <div class="loading-desc">Personalizando para a vaga...</div>
+  </div>
+  <div id="letterContent" style="display:none">
+    <div class="resume-header">
+      <div><div class="resume-title">Carta de Apresentacao</div><div class="resume-sub">Personalizada para a vaga</div></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="copyEl('letterOutput',this)">Copiar</button>
+        <button class="btn btn-secondary" onclick="printEl('letterOutput')">PDF</button>
+        <button class="btn btn-purple" onclick="runCoverLetter()">Regenerar</button>
+      </div>
+    </div>
+    <div class="letter-box" id="letterOutput"></div>
+    <div style="display:flex;gap:10px;margin-top:1rem">
+      <button class="btn btn-secondary" onclick="showPanel('resume')">&larr; Ver Curriculo</button>
+      <button class="btn btn-secondary" onclick="showPanel('input')">Nova Analise</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="panel" id="panel-history">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+    <div style="font-family:'Syne';font-size:18px;font-weight:700">Historico de Analises</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" onclick="clearHistory()">Limpar</button>
+      <button class="btn btn-secondary" onclick="showPanel('input')">&larr; Voltar</button>
+    </div>
+  </div>
+  <div class="history-grid" id="historyGrid"></div>
+</div>
+
+</div>
+<footer><p>CvGo &mdash; Criado por <strong style="color:var(--accent2)">Henrique Guth</strong> &mdash; Powered by Groq &middot; Llama 3.3 &middot; &copy; 2026</p></footer>
+
+<script>
+// CONFIG
+// Chave protegida no servidor via /api/chat
+let analysisData = null, rewrittenResume = "";
+
+// PDF.js — inicializa worker uma unica vez
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+// FILE UPLOAD — codigo identico ao concorrente que funciona
+async function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = "";
+  setStatus("loading", "Extraindo texto...");
+  try {
+    let text = "";
+    if (file.name.toLowerCase().endsWith(".pdf")) {
+      const ab = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data: ab}).promise;
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const tc = await page.getTextContent();
+        let lastY = null;
+        let line = "";
+        for (const item of tc.items) {
+          const y = Math.round(item.transform[5]);
+          if (lastY !== null && Math.abs(y - lastY) > 3) {
+            fullText += line.trim() + "\n";
+            line = "";
+          }
+          line += item.str + " ";
+          lastY = y;
+        }
+        if (line.trim()) fullText += line.trim() + "\n";
+        fullText += "\n";
+      }
+      text = fullText;
+    } else {
+      const ab = await file.arrayBuffer();
+      const res = await mammoth.extractRawText({arrayBuffer: ab});
+      text = res.value;
+    }
+    if (!text || text.trim().length < 30) { setStatus("error", "Nao foi possivel extrair. Cole manualmente."); return; }
+    document.getElementById("resumeText").value = text.trim();
+    checkInputs();
+    setStatus("success", file.name + " — " + text.trim().length.toLocaleString("pt-BR") + " caracteres");
+  } catch(e) {
+    setStatus("error", "Erro: " + e.message + ". Cole o texto manualmente.");
+  }
+}
+function setStatus(type, msg) {
+  const el = document.getElementById("uploadStatus");
+  el.className = "upload-status " + type;
+  el.textContent = msg;
+}
+
+// INPUTS
+function checkInputs() {
+  const r = document.getElementById("resumeText").value.trim();
+  const j = document.getElementById("jobText").value.trim();
+  document.getElementById("resumeChars").textContent = r.length.toLocaleString("pt-BR") + " caracteres";
+  document.getElementById("jobChars").textContent = j.length.toLocaleString("pt-BR") + " caracteres";
+  const ok = r.length > 80 && j.length > 80;
+  document.getElementById("analyzeBtn").disabled = !ok;
+  document.getElementById("hintText").textContent = ok ? "Tudo pronto!" : "Preencha os dois campos para continuar";
+}
+document.getElementById("resumeText").addEventListener("input", checkInputs);
+document.getElementById("resumeText").addEventListener("paste", () => setTimeout(checkInputs, 50));
+document.getElementById("jobText").addEventListener("input", checkInputs);
+document.getElementById("jobText").addEventListener("paste", () => setTimeout(checkInputs, 50));
+
+// NAVIGATION
+function showPanel(id) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.getElementById("panel-" + id).classList.add("active");
+  if (id === "history") loadHistory();
+  const map = {input:1, loading:0, analysis:2, resume:3, letter:4, history:0};
+  const cur = map[id] || 0;
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById("step-" + i);
+    if (!el) continue;
+    el.className = "step-item";
+    if (i < cur) el.classList.add("done");
+    else if (i === cur) el.classList.add("active");
+  }
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function trunc(t, n) { return t.length <= n ? t : t.slice(0, n); }
+
+// API com fallback automatico
+async function callGroq(prompt, maxTokens, temp, json) {
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({prompt, maxTokens, temp, json})
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Erro na API");
+  if (!data.text) throw new Error("Resposta vazia. Tente novamente.");
+  return data.text;
+}
+
+// ANALYSIS
+async function runAnalysis() {
+  const resume = document.getElementById("resumeText").value.trim();
+  const job = document.getElementById("jobText").value.trim();
+  showPanel("loading");
+  const prompt = `Analise a compatibilidade ATS entre o curriculo e a vaga. Retorne APENAS JSON valido.
+
+IMPORTANTE: score e metrics sao PORCENTAGENS REAIS de 0 a 100. Um bom curriculo tem score 70-95.
+
+CURRICULO:
+${trunc(resume,3000)}
+
+VAGA:
+${trunc(job,2000)}
+
+JSON:
+{"score":85,"metrics":{"keywords":90,"experience":85,"skills":80,"format":75},"verdict":"Muito Bom","verdict_desc":"frase curta de 10 palavras","summary":"resumo de 2-3 frases","keywords_found":["kw1"],"keywords_missing":["kw2"],"keywords_partial":["kw3"],"strengths":["forca1"],"weaknesses":["melhoria1"],"tips":["dica1"]}`;
+  try {
+    const text = await callGroq(prompt, 1500, 0.1, true);
+    analysisData = JSON.parse(text);
+    saveHistory(resume, job, analysisData);
+    renderAnalysis(analysisData);
+    showPanel("analysis");
+  } catch(e) { showPanel("input"); alert("Erro: " + e.message); }
+}
+
+function renderAnalysis(d) {
+  const m = d.metrics || {};
+  const score = Math.min(100, Math.max(0, Math.round(((m.keywords||0)+(m.experience||0)+(m.skills||0)+(m.format||0))/4)));
+  document.getElementById("scoreText").textContent = score + "%";
+  const color = score>=75?"#22C98B":score>=50?"#FFB547":"#FF5F6D";
+  document.getElementById("scoreCircle").style.stroke = color;
+  document.getElementById("scoreText").style.color = color;
+  document.getElementById("scoreCircle").style.strokeDashoffset = 390-(390*score/100);
+  document.getElementById("verdictText").textContent = d.verdict||"";
+  document.getElementById("verdictText").style.color = color;
+  document.getElementById("verdictDesc").textContent = d.verdict_desc||"";
+  const defs = [{key:"keywords",label:"Palavras-chave",color:"#4F7FFF"},{key:"experience",label:"Experiencia",color:"#22C98B"},{key:"skills",label:"Habilidades",color:"#FFB547"},{key:"format",label:"Formato CV",color:"#C084FC"}];
+  document.getElementById("metricsList").innerHTML = defs.map(mt => {
+    const v = Math.round(m[mt.key]||0);
+    return `<div class="metric-row"><div class="metric-label">${mt.label}</div><div class="metric-val" style="color:${mt.color}">${v}%</div><div class="metric-bar-track"><div class="metric-bar-fill" style="width:${v}%;background:${mt.color}"></div></div></div>`;
+  }).join("");
+  document.getElementById("resSummary").textContent = d.summary||"";
+  document.getElementById("resFound").innerHTML = (d.keywords_found||[]).map(k=>`<span class="tag tag-green">${k}</span>`).join("");
+  document.getElementById("resMissing").innerHTML = (d.keywords_missing||[]).map(k=>`<span class="tag tag-red">${k}</span>`).join("");
+  document.getElementById("resStrengths").innerHTML = (d.strengths||[]).map(k=>`<span class="tag tag-amber">${k}</span>`).join("");
+  document.getElementById("resWeaknesses").innerHTML = (d.weaknesses||[]).map(w=>`<li>${w}</li>`).join("");
+  document.getElementById("resTips").innerHTML = (d.tips||[]).map(t=>`<li>${t}</li>`).join("");
+}
+
+// REWRITE
+async function runRewrite() {
+  const resume = document.getElementById("resumeText").value.trim();
+  const job = document.getElementById("jobText").value.trim();
+  showPanel("resume");
+  document.getElementById("resumeLoadingWrap").style.display = "flex";
+  document.getElementById("resumeContent").style.display = "none";
+  const missing = (analysisData?.keywords_missing||[]).join(", ");
+  const weaknesses = (analysisData?.weaknesses||[]).join("\n");
+  const prompt = `Melhore o curriculo abaixo SEM remover nada que ja existe.
+
+CURRICULO ORIGINAL:
+${trunc(resume,5000)}
+
+VAGA:
+${trunc(job,800)}
+
+${missing?"PALAVRAS PARA INSERIR (1x cada, no Resumo e Competencias):\n"+missing:""}
+${weaknesses?"PONTOS DE MELHORIA (adapte frases existentes):\n"+weaknesses:""}
+
+REGRAS OBRIGATORIAS:
+- NAO remova bullets, experiencias ou habilidades existentes
+- NAO altere empresas, cargos ou datas
+- Adicione palavras-chave ausentes no Resumo e Competencias
+- Texto puro SEM markdown (sem **, *, ##, emojis)
+- Use bullet • para itens de lista\n- CADA bullet em sua PROPRIA linha separada\n- Data separada dos bullets por quebra de linha\n- Entre cada bullet usar \\n
+- Cada secao aparece UMA vez
+- FORMATO: cada secao em linha separada, com linha em branco entre secoes
+- Cabecalho: NOME na primeira linha, cargo na segunda, contatos na terceira
+- NUNCA coloque tudo numa linha so - use quebras de linha \n entre cada informacao
+- Retorne APENAS o curriculo formatado com quebras de linha corretas`;
+  try {
+    const text = await callGroq(prompt, 5000, 0.1, false);
+    rewrittenResume = text
+  .replace(/\*\*([^*]+)\*\*/g,"$1")
+  .replace(/\*([^*]+)\*/g,"$1")
+  .replace(/^#+\s*/gm,"")
+  .replace(/^\s*[-–]\s+/gm,"• ")
+  .replace(/^\s*\+\s+/gm,"• ")
+  .replace(/[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\uFE0F]/gu,"")
+  .replace(/([^\n])(•)/g,"$1\n$2")
+  .replace(/\n{3,}/g,"\n\n")
+  .trim();
+    // Format output with proper line breaks
+    rewrittenResume = rewrittenResume
+      // Add newline before each bullet
+      .replace(/([^
+])\s*•\s*/g, "$1
+• ")
+      // Add newline before section headers (ALL CAPS words)
+      .replace(/([^
+])\s+(OBJETIVO|RESUMO|EXPERIÊNCIA|EXPERIENCIA|FORMAÇÃO|FORMACAO|COMPETÊNCIAS|COMPETENCIAS|IDIOMAS|HABILIDADES|CERTIFICAÇÕES|CERTIFICACOES|RESULTADOS)(\s|:)/g, "$1
+
+$2$3")
+      // Add newline before dates like 03/2025
+      .replace(/([^
+])\s+(\d{2}\/\d{4})/g, "$1
+$2")
+      // Add newline before Resultados:
+      .replace(/([^
+])\s+(Resultados:)/g, "$1
+$2")
+      // Clean up excess blank lines
+      .replace(/
+{3,}/g, "
+
+")
+      .trim();
+    document.getElementById("resumeOutput").textContent = rewrittenResume;
+    document.getElementById("resumeLoadingWrap").style.display = "none";
+    document.getElementById("resumeContent").style.display = "block";
+  } catch(e) {
+    document.getElementById("resumeLoadingWrap").style.display = "none";
+    document.getElementById("resumeContent").innerHTML = `<div class="error-box">Erro: ${e.message}</div>`;
+    document.getElementById("resumeContent").style.display = "block";
+  }
+}
+
+// COVER LETTER
+async function runCoverLetter() {
+  const resume = document.getElementById("resumeText").value.trim();
+  const job = document.getElementById("jobText").value.trim();
+  showPanel("letter");
+  document.getElementById("letterLoadingWrap").style.display = "flex";
+  document.getElementById("letterContent").style.display = "none";
+  const prompt = `Escreva uma carta de apresentacao profissional.\n\nCURRICULO: ${trunc(resume,2000)}\n\nVAGA: ${trunc(job,800)}\n\nESTRUTURA: abertura impactante, conquistas com numeros, proposta de valor, call-to-action. 4 paragrafos. Retorne APENAS a carta.`;
+  try {
+    const text = await callGroq(prompt, 1000, 0.5, false);
+    document.getElementById("letterOutput").textContent = text;
+    document.getElementById("letterLoadingWrap").style.display = "none";
+    document.getElementById("letterContent").style.display = "block";
+  } catch(e) {
+    document.getElementById("letterLoadingWrap").style.display = "none";
+    document.getElementById("letterContent").innerHTML = `<div class="error-box">Erro: ${e.message}</div>`;
+    document.getElementById("letterContent").style.display = "block";
+  }
+}
+
+// UTILS
+function copyEl(id, btn) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(() => {
+    const orig = btn.innerHTML; btn.innerHTML = "Copiado!";
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  });
+}
+function downloadEl(id) {
+  const a = Object.assign(document.createElement("a"), {href:URL.createObjectURL(new Blob([document.getElementById(id).textContent],{type:"text/plain"})),download:"curriculo-ats-cvgo.txt"});
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function printEl(id) {
+  const w = window.open("","_blank");
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>body{font-family:Georgia,serif;font-size:12pt;line-height:1.8;max-width:800px;margin:40px auto;padding:0 40px}pre{white-space:pre-wrap;font-family:Georgia,serif}@media print{body{margin:0;padding:20px}}</style></head><body><pre>${document.getElementById(id).textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre><script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+
+// HISTORY
+function saveHistory(resume, job, analysis) {
+  try {
+    const h = JSON.parse(localStorage.getItem("cvgo_h")||"[]");
+    const m = analysis.metrics||{};
+    const score = Math.round(((m.keywords||0)+(m.experience||0)+(m.skills||0)+(m.format||0))/4);
+    h.unshift({id:Date.now(),date:new Date().toLocaleDateString("pt-BR"),jobTitle:job.split("\n")[0].trim().slice(0,60)||"Vaga",candidateName:resume.split("\n")[0].trim().slice(0,40)||"Candidato",score,resume,job,analysis});
+    localStorage.setItem("cvgo_h", JSON.stringify(h.slice(0,15)));
+  } catch(e){}
+}
+function loadHistory() {
+  try {
+    const h = JSON.parse(localStorage.getItem("cvgo_h")||"[]");
+    document.getElementById("historyGrid").innerHTML = h.length ? h.map(item => {
+      const c = item.score>=75?"#22C98B":item.score>=50?"#FFB547":"#FF5F6D";
+      return `<div class="history-card" onclick="restoreHistory(${item.id})"><div class="history-score" style="color:${c};background:${c}20">${item.score}%</div><div class="history-info"><div class="history-job">${item.jobTitle}</div><div class="history-meta">${item.candidateName} &middot; ${item.date}</div></div><button class="history-del" onclick="event.stopPropagation();deleteHistory(${item.id})">X</button></div>`;
+    }).join("") : "<p style='color:var(--text3);font-size:13px'>Nenhuma analise salva ainda.</p>";
+  } catch(e) { localStorage.removeItem("cvgo_h"); }
+}
+function restoreHistory(id) {
+  const h = JSON.parse(localStorage.getItem("cvgo_h")||"[]");
+  const item = h.find(x => x.id===id);
+  if (!item) return;
+  document.getElementById("resumeText").value = item.resume;
+  document.getElementById("jobText").value = item.job;
+  checkInputs();
+  analysisData = item.analysis;
+  renderAnalysis(item.analysis);
+  showPanel("analysis");
+}
+function deleteHistory(id) {
+  const h = JSON.parse(localStorage.getItem("cvgo_h")||"[]");
+  localStorage.setItem("cvgo_h", JSON.stringify(h.filter(x=>x.id!==id)));
+  loadHistory();
+}
+function clearHistory() {
+  if(confirm("Limpar todo o historico?")) { localStorage.removeItem("cvgo_h"); loadHistory(); }
+}
+window.onload = () => {};
+</script>
+</body>
+</html>
